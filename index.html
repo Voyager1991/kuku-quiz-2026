@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="くく">
+<meta name="theme-color" content="#fff8e7">
+<link rel="manifest" href="manifest.json">
+<title>くく クイズ</title>
+<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Yusei+Magic&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #fff8e7;
+    --peach: #ffd5b8;
+    --pink: #ffb3c6;
+    --mint: #b8e6d4;
+    --sky: #b8dcff;
+    --lemon: #fff2a8;
+    --lavender: #e0c8ff;
+    --coral: #ff7a6b;
+    --grape: #9c7bd9;
+    --ink: #3d2b56;
+    --shadow: 0 6px 0 rgba(61, 43, 86, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Yusei Magic', sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 15% 20%, var(--lemon) 0%, transparent 35%),
+      radial-gradient(circle at 85% 75%, var(--mint) 0%, transparent 40%),
+      radial-gradient(circle at 50% 100%, var(--pink) 0%, transparent 45%),
+      var(--cream);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .cloud {
+    position: fixed;
+    background: rgba(255,255,255,0.7);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cloud::before, .cloud::after {
+    content: ''; position: absolute; background: rgba(255,255,255,0.7); border-radius: 50%;
+  }
+  .c1 { width: 80px; height: 80px; top: 8%; left: -100px; animation: drift 40s linear infinite; }
+  .c1::before { width: 60px; height: 60px; top: -25px; left: 15px; }
+  .c1::after { width: 50px; height: 50px; top: 10px; left: 50px; }
+  .c2 { width: 100px; height: 100px; top: 70%; left: -150px; animation: drift 55s linear infinite; animation-delay: -20s; }
+  .c2::before { width: 70px; height: 70px; top: -30px; left: 20px; }
+  .c2::after { width: 60px; height: 60px; top: 15px; left: 65px; }
+
+  @keyframes drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(100vw + 250px)); }
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+
+  .score {
+    background: white;
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .star-icon { font-size: 22px; }
+
+  .review-badge {
+    background: var(--grape);
+    color: white;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 14px;
+    margin-left: 8px;
+    display: none;
+  }
+  .review-badge.show { display: inline-block; }
+
+  .top-buttons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    background: white;
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.1s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(61,43,86,0.15); }
+
+  .question-card {
+    background: white;
+    border: 5px solid var(--ink);
+    border-radius: 28px;
+    padding: 18px 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .question-card.review-mode {
+    background: linear-gradient(135deg, white 0%, #f3eaff 100%);
+    border-color: var(--grape);
+  }
+
+  .question-card::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 80px; height: 80px;
+    background: var(--lemon);
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+  .question-card::after {
+    content: '';
+    position: absolute;
+    bottom: -25px; left: -25px;
+    width: 60px; height: 60px;
+    background: var(--pink);
+    border-radius: 50%;
+    opacity: 0.5;
+  }
+
+  .review-tag {
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    background: var(--grape);
+    color: white;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 14px;
+    display: none;
+    z-index: 2;
+  }
+  .review-tag.show { display: block; }
+
+  .dan-tag {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    background: var(--peach);
+    border: 3px solid var(--ink);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 2px 12px;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 14px;
+    z-index: 2;
+  }
+
+  .equation {
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: clamp(48px, 11vmin, 96px);
+    line-height: 1.1;
+    margin: 12px 0 4px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(8px, 2vmin, 18px);
+    flex-wrap: nowrap;
+  }
+
+  .num {
+    display: inline-block;
+    animation: numPop 0.4s ease;
+  }
+  .op, .equals {
+    color: var(--coral);
+    display: inline-block;
+  }
+  .qmark {
+    color: var(--grape);
+    display: inline-block;
+    animation: bounce 1.5s ease-in-out infinite;
+  }
+
+  @keyframes numPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-8px) rotate(3deg); }
+  }
+
+  .speaker-btn {
+    background: var(--coral);
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    color: white;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 18px;
+    padding: 10px 22px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    margin-top: 6px;
+  }
+  .speaker-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(61,43,86,0.15); }
+
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    flex: 1;
+    align-content: center;
+    min-height: 0;
+  }
+
+  .choice {
+    background: white;
+    border: 5px solid var(--ink);
+    border-radius: 24px;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: clamp(36px, 8vmin, 72px);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.1s, background 0.2s;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .choice:nth-child(6n+1) { background: var(--peach); }
+  .choice:nth-child(6n+2) { background: var(--mint); }
+  .choice:nth-child(6n+3) { background: var(--sky); }
+  .choice:nth-child(6n+4) { background: var(--lemon); }
+  .choice:nth-child(6n+5) { background: var(--lavender); }
+  .choice:nth-child(6n+6) { background: var(--pink); }
+
+  .choice:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(61,43,86,0.15); }
+
+  .choice.correct {
+    animation: correct-pulse 0.6s ease;
+    background: #7dd87d !important;
+  }
+  .choice.wrong {
+    animation: shake 0.4s ease;
+    background: #ff9999 !important;
+  }
+
+  @keyframes correct-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15) rotate(5deg); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .celebrate {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    display: none;
+  }
+  .celebrate.show { display: block; }
+
+  .confetti {
+    position: absolute;
+    width: 14px; height: 14px;
+    top: -20px;
+    animation: fall linear forwards;
+  }
+
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); }
+  }
+
+  .praise {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: white;
+    border: 5px solid var(--ink);
+    border-radius: 32px;
+    padding: 20px 44px;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 44px;
+    color: var(--coral);
+    box-shadow: var(--shadow);
+    z-index: 101;
+    text-align: center;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .praise.show {
+    animation: pop 1.4s ease forwards;
+  }
+
+  @keyframes pop {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(-15deg); }
+    20% { transform: translate(-50%, -50%) scale(1.2) rotate(5deg); }
+    35% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    80% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.1) rotate(0deg); opacity: 0; }
+  }
+
+  .streak {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 10px;
+  }
+  .streak-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #ddd;
+    border: 2px solid var(--ink);
+  }
+  .streak-dot.on { background: var(--coral); }
+
+  /* 設定モーダル */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(61, 43, 86, 0.5);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop.show { display: flex; }
+
+  .modal {
+    background: var(--cream);
+    border: 5px solid var(--ink);
+    border-radius: 28px;
+    padding: 24px 20px;
+    box-shadow: var(--shadow);
+    max-width: 480px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal h2 {
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .modal .modal-sub {
+    text-align: center;
+    font-size: 14px;
+    color: rgba(61,43,86,0.7);
+    margin-bottom: 18px;
+  }
+
+  .dan-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .dan-btn {
+    background: white;
+    border: 4px solid var(--ink);
+    border-radius: 18px;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 22px;
+    padding: 14px 0;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.1s;
+    color: var(--ink);
+  }
+  .dan-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(61,43,86,0.15); }
+  .dan-btn.active {
+    background: var(--coral);
+    color: white;
+  }
+
+  .preset-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .preset-btn {
+    background: var(--lavender);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(61,43,86,0.15);
+    color: var(--ink);
+  }
+  .preset-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(61,43,86,0.15); }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  .modal-actions button {
+    flex: 1;
+    background: var(--mint);
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    padding: 12px;
+    font-family: 'Mochiy Pop One', sans-serif;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    color: var(--ink);
+  }
+  .modal-actions button:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(61,43,86,0.15); }
+  .modal-actions .secondary {
+    background: white;
+  }
+
+  /* 横向き(landscape): 質問カードと選択肢を横並びにして縦の圧迫を防ぐ */
+  @media (orientation: landscape) and (max-height: 600px) {
+    .app {
+      flex-direction: row;
+      max-width: 100%;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .top {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 10;
+    }
+    .question-card {
+      flex: 0 0 38%;
+      margin-bottom: 0;
+      margin-top: 70px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .choices {
+      margin-top: 70px;
+    }
+    .equation { font-size: clamp(36px, 8vmin, 64px); }
+  }
+
+  /* 大画面(iPad横向きなど) */
+  @media (min-width: 768px) {
+    .app { padding: 24px; max-width: 900px; }
+    .question-card { padding: 24px; border-radius: 36px; }
+    .choices { gap: 16px; }
+    .choice { border-radius: 28px; }
+  }
+
+  /* 小さい画面 */
+  @media (max-width: 380px) {
+    .choice { border-radius: 18px; border-width: 4px; }
+    .score { font-size: 16px; padding: 6px 12px; }
+    .star-icon { font-size: 18px; }
+    .streak-dot { width: 10px; height: 10px; }
+    .icon-btn { width: 42px; height: 42px; font-size: 18px; border-width: 3px; }
+  }
+
+  /* 低い画面(横向きスマホなど) */
+  @media (max-height: 500px) {
+    .question-card { padding: 8px; }
+    .speaker-btn { font-size: 14px; padding: 6px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+
+<div class="app">
+  <div class="top">
+    <div class="score">
+      <span class="star-icon">⭐</span>
+      <span id="scoreNum">0</span>
+      <div class="streak" id="streak">
+        <div class="streak-dot"></div>
+        <div class="streak-dot"></div>
+        <div class="streak-dot"></div>
+      </div>
+      <span class="review-badge" id="reviewBadge">📖 <span id="reviewCount">0</span></span>
+    </div>
+    <div class="top-buttons">
+      <button class="icon-btn" id="settingsBtn" aria-label="せってい">⚙️</button>
+      <button class="icon-btn" id="restartBtn" aria-label="さいしょから">🔄</button>
+    </div>
+  </div>
+
+  <div class="question-card" id="questionCard">
+    <div class="review-tag" id="reviewTag">📖 ふくしゅう</div>
+    <div class="dan-tag" id="danTag">2のだん</div>
+    <div class="equation" id="equation">
+      <span class="num" id="num1">2</span>
+      <span class="op">×</span>
+      <span class="num" id="num2">3</span>
+      <span class="equals">=</span>
+      <span class="qmark">?</span>
+    </div>
+    <div>
+      <button class="speaker-btn" id="speakBtn">
+        <span style="font-size: 22px;">🔊</span>
+        <span>もういちど きく</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="choices" id="choices"></div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <h2>⚙️ せってい</h2>
+    <div class="modal-sub">れんしゅうする だんを えらんでね</div>
+
+    <div class="preset-row">
+      <button class="preset-btn" data-preset="easy">2と5</button>
+      <button class="preset-btn" data-preset="lower">2〜5</button>
+      <button class="preset-btn" data-preset="upper">6〜9</button>
+      <button class="preset-btn" data-preset="all">ぜんぶ</button>
+    </div>
+
+    <div class="dan-grid" id="danGrid">
+      <!-- JS で 1〜9 のだんボタンを生成 -->
+    </div>
+
+    <div class="modal-actions">
+      <button class="secondary" id="resetProgressBtn">にがてリセット</button>
+      <button id="closeSettingsBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="praise" id="praise">すごい！</div>
+<div class="celebrate" id="celebrate"></div>
+
+<script>
+  // ===== 九九データ =====
+  // 伝統的な唱え方(1〜9の段)
+  // 参考: 小学校2年で学習する伝統的な九九暗唱
+  const KUKU_CHANT = {
+    // 1の段
+    '1x1': 'いんいちが いち', '1x2': 'いんにが に', '1x3': 'いんさんが さん',
+    '1x4': 'いんしが し', '1x5': 'いんごが ご', '1x6': 'いんろくが ろく',
+    '1x7': 'いんしちが しち', '1x8': 'いんはちが はち', '1x9': 'いんくが く',
+    // 2の段
+    '2x1': 'にいちが に', '2x2': 'ににんが し', '2x3': 'にさんが ろく',
+    '2x4': 'にしが はち', '2x5': 'にごじゅう', '2x6': 'にろくじゅうに',
+    '2x7': 'にしちじゅうし', '2x8': 'にはちじゅうろく', '2x9': 'にくじゅうはち',
+    // 3の段
+    '3x1': 'さんいちが さん', '3x2': 'さんにが ろく', '3x3': 'さざんが く',
+    '3x4': 'さんしじゅうに', '3x5': 'さんごじゅうご', '3x6': 'さぶろくじゅうはち',
+    '3x7': 'さんしちにじゅういち', '3x8': 'さんぱにじゅうし', '3x9': 'さんくにじゅうしち',
+    // 4の段
+    '4x1': 'しいちが し', '4x2': 'しにが はち', '4x3': 'しさんじゅうに',
+    '4x4': 'ししじゅうろく', '4x5': 'しごにじゅう', '4x6': 'しろくにじゅうし',
+    '4x7': 'ししちにじゅうはち', '4x8': 'しはさんじゅうに', '4x9': 'しくさんじゅうろく',
+    // 5の段
+    '5x1': 'ごいちが ご', '5x2': 'ごにじゅう', '5x3': 'ごさんじゅうご',
+    '5x4': 'ごしにじゅう', '5x5': 'ごごにじゅうご', '5x6': 'ごろくさんじゅう',
+    '5x7': 'ごしちさんじゅうご', '5x8': 'ごはしじゅう', '5x9': 'ごっくしじゅうご',
+    // 6の段
+    '6x1': 'ろくいちが ろく', '6x2': 'ろくにじゅうに', '6x3': 'ろくさんじゅうはち',
+    '6x4': 'ろくしにじゅうし', '6x5': 'ろくごさんじゅう', '6x6': 'ろくろくさんじゅうろく',
+    '6x7': 'ろくしちしじゅうに', '6x8': 'ろくはしじゅうはち', '6x9': 'ろっくごじゅうし',
+    // 7の段
+    '7x1': 'しちいちが しち', '7x2': 'しちにじゅうし', '7x3': 'しちさんにじゅういち',
+    '7x4': 'しちしにじゅうはち', '7x5': 'しちごさんじゅうご', '7x6': 'しちろくしじゅうに',
+    '7x7': 'しちしちしじゅうく', '7x8': 'しちはごじゅうろく', '7x9': 'しちくろくじゅうさん',
+    // 8の段
+    '8x1': 'はちいちが はち', '8x2': 'はちにじゅうろく', '8x3': 'はちさんにじゅうし',
+    '8x4': 'はちしさんじゅうに', '8x5': 'はちごしじゅう', '8x6': 'はちろくしじゅうはち',
+    '8x7': 'はちしちごじゅうろく', '8x8': 'はっぱろくじゅうし', '8x9': 'はっくしちじゅうに',
+    // 9の段
+    '9x1': 'くいちが く', '9x2': 'くにじゅうはち', '9x3': 'くさんにじゅうしち',
+    '9x4': 'くしさんじゅうろく', '9x5': 'くごしじゅうご', '9x6': 'くろくごじゅうし',
+    '9x7': 'くしちろくじゅうさん', '9x8': 'くはしちじゅうに', '9x9': 'くくはちじゅういち'
+  };
+
+  // 唱えから「答えを伏せた読み上げ用」を作る
+  // ルール:
+  //   1桁の答え(「が」あり) → 「が」まで読む    例: ににんがし → ににんが
+  //   2桁の答え(「が」なし) → a×b 部分だけ読む  例: にろくじゅうに → にろく
+  //                                              にごじゅう → に(2×5=10、a×b=「に」「ご」だが慣用に従い「にご」)
+  // 実装方針:
+  //   「が」を含むなら「が」までで切る。
+  //   「が」を含まないなら、辞書化した a×b 読みプレフィックスを使う。
+  const AB_PREFIX = {
+    1: 'いん', 2: 'に',  3: 'さん', 4: 'し',  5: 'ご',
+    6: 'ろく', 7: 'しち',8: 'はち', 9: 'く'
+  };
+  // 例外的に縮約される a×b 読み(伝統的な唱えに合わせる)
+  // key: "a x b", value: 読み (a×b 部分のみ)
+  const AB_PREFIX_OVERRIDE = {
+    '3x3': 'さざん',   // さざんがく
+    '3x6': 'さぶろく', // さぶろくじゅうはち
+    '3x8': 'さんぱ',   // さんぱにじゅうし
+    '5x8': 'ごは',     // ごはしじゅう
+    '5x9': 'ごっく',   // ごっくしじゅうご
+    '6x8': 'ろくは',   // ろくはしじゅうはち
+    '6x9': 'ろっく',   // ろっくごじゅうし
+    '8x1': 'はち',
+    '8x8': 'はっぱ',   // はっぱろくじゅうし
+    '8x9': 'はっく'    // はっくしちじゅうに
+  };
+
+  function buildPrompt(a, b) {
+    const key = `${a}x${b}`;
+    const chant = KUKU_CHANT[key];
+    if (!chant) return '';
+    // 「が」を含む(=答えが1桁)場合は「が」までで切る
+    const gIdx = chant.indexOf('が');
+    if (gIdx >= 0) {
+      return chant.slice(0, gIdx + 1);
+    }
+    // 「が」を含まない(=答えが2桁)場合は a×b 部分のみ
+    if (AB_PREFIX_OVERRIDE[key]) return AB_PREFIX_OVERRIDE[key];
+    return AB_PREFIX[a] + AB_PREFIX[b];
+  }
+
+  const STORAGE_KEY = 'kuku_quiz_mistakes_v1';
+  const ROUND_KEY = 'kuku_quiz_round_v1';
+  const SETTINGS_KEY = 'kuku_quiz_settings_v1';
+
+  // ===== 状態 =====
+  let mistakes = {};       // 間隔反復: { "2x3": { wrongCount, correctSinceWrong, dueIn } }
+  let questionCount = 0;
+  let lastQuestionKey = null;
+  let roundQueue = [];
+  let activeDans = [2, 5];  // 初期セット: 2と5の段
+  let score = 0;
+  let streak = 0;
+  let currentQ = null;     // { a, b, ans, key, isReview }
+  let canTap = true;
+
+  // ===== 永続化 =====
+  function loadMistakes() {
+    try { const r = localStorage.getItem(STORAGE_KEY); if (r) mistakes = JSON.parse(r); }
+    catch (e) { mistakes = {}; }
+  }
+  function saveMistakes() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(mistakes)); } catch (e) {}
+  }
+  function loadRound() {
+    try {
+      const r = localStorage.getItem(ROUND_KEY);
+      if (r) { const a = JSON.parse(r); if (Array.isArray(a)) roundQueue = a; }
+    } catch (e) { roundQueue = []; }
+  }
+  function saveRound() {
+    try { localStorage.setItem(ROUND_KEY, JSON.stringify(roundQueue)); } catch (e) {}
+  }
+  function loadSettings() {
+    try {
+      const r = localStorage.getItem(SETTINGS_KEY);
+      if (r) {
+        const s = JSON.parse(r);
+        if (s && Array.isArray(s.activeDans) && s.activeDans.length > 0) {
+          activeDans = s.activeDans.filter(n => n >= 1 && n <= 9);
+        }
+      }
+    } catch (e) {}
+  }
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ activeDans }));
+    } catch (e) {}
+  }
+
+  // ===== 出題ロジック =====
+  // 1ラウンド = 選択中の段 × 1〜9 の全組み合わせをシャッフルしたキュー
+  // 4×3 と 3×4 を別問題として扱う(可換性を体感させる: 学術的にはこの方が早く習得)
+  function buildNewRound() {
+    const queue = [];
+    activeDans.forEach(a => {
+      for (let b = 1; b <= 9; b++) {
+        queue.push({ a, b });
+      }
+    });
+    // ウィンドウ5でシャッフル(同じ段が連続しないように軽く混ぜる)
+    const win = 5;
+    for (let i = 0; i < queue.length; i += win) {
+      const slice = queue.slice(i, i + win);
+      for (let j = slice.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [slice[j], slice[k]] = [slice[k], slice[j]];
+      }
+      for (let j = 0; j < slice.length; j++) queue[i + j] = slice[j];
+    }
+    return queue;
+  }
+
+  function keyOf(a, b) { return `${a}x${b}`; }
+
+  function recordWrong(key) {
+    if (!mistakes[key]) {
+      mistakes[key] = { wrongCount: 0, correctSinceWrong: 0, dueIn: 0 };
+    }
+    mistakes[key].wrongCount += 1;
+    mistakes[key].correctSinceWrong = 0;
+    mistakes[key].dueIn = 2 + Math.floor(Math.random() * 2); // 2〜3問後
+    saveMistakes();
+  }
+
+  function recordCorrect(key) {
+    if (!mistakes[key]) return;
+    mistakes[key].correctSinceWrong += 1;
+    const c = mistakes[key].correctSinceWrong;
+    if (c === 1) mistakes[key].dueIn = 5;
+    else if (c === 2) mistakes[key].dueIn = 10;
+    else if (c >= 3) {
+      // 卒業
+      delete mistakes[key];
+    }
+    saveMistakes();
+  }
+
+  function tickDueCounters() {
+    Object.keys(mistakes).forEach(k => {
+      if (mistakes[k].dueIn > 0) mistakes[k].dueIn -= 1;
+    });
+  }
+
+  function getDueKeys() {
+    return Object.keys(mistakes).filter(k => mistakes[k].dueIn <= 0);
+  }
+
+  function pickNextQuestion() {
+    const due = getDueKeys();
+
+    // 復習割り込み: 40%の確率
+    if (due.length > 0 && Math.random() < 0.4) {
+      const candidates = due.filter(k => k !== lastQuestionKey);
+      const pool = candidates.length > 0 ? candidates : due;
+      const k = pool[Math.floor(Math.random() * pool.length)];
+      const [a, b] = k.split('x').map(Number);
+      return { a, b, ans: a * b, key: k, isReview: true };
+    }
+
+    // 通常: ラウンドキューから
+    if (roundQueue.length === 0) {
+      roundQueue = buildNewRound();
+    }
+    if (roundQueue.length === 1) {
+      const only = roundQueue[0];
+      if (keyOf(only.a, only.b) === lastQuestionKey) {
+        const remaining = roundQueue[0];
+        roundQueue = buildNewRound();
+        // 同じ問題を後ろに回す
+        const idx = roundQueue.findIndex(q => q.a === remaining.a && q.b === remaining.b);
+        if (idx >= 0) {
+          roundQueue.splice(idx, 1);
+          roundQueue.push(remaining);
+        }
+      }
+    }
+    // 先頭が前回と同じなら入れ替え
+    if (roundQueue.length > 1) {
+      const head = roundQueue[0];
+      if (keyOf(head.a, head.b) === lastQuestionKey) {
+        [roundQueue[0], roundQueue[1]] = [roundQueue[1], roundQueue[0]];
+      }
+    }
+
+    const q = roundQueue.shift();
+    saveRound();
+    return { a: q.a, b: q.b, ans: q.a * q.b, key: keyOf(q.a, q.b), isReview: false };
+  }
+
+  // ===== 誤答(ディストラクター)生成 =====
+  // 学術知見: 「近接誤答」(±段の値、±1) と 「他の段の答え」を混ぜると
+  // 丸暗記でなく計算で確認する習慣がつく
+  function pickDistractors(correctAns, a, b, n) {
+    const candidates = new Set();
+
+    // 近接誤答1: ±a, ±b (1段ずらし)
+    [a, b, a + b, a - b].forEach(d => {
+      if (d > 0) {
+        const v1 = correctAns + d, v2 = correctAns - d;
+        if (v1 !== correctAns && v1 > 0 && v1 <= 100) candidates.add(v1);
+        if (v2 !== correctAns && v2 > 0 && v2 <= 100) candidates.add(v2);
+      }
+    });
+
+    // 近接誤答2: ±1, ±2
+    [1, 2, 3].forEach(d => {
+      const v1 = correctAns + d, v2 = correctAns - d;
+      if (v1 !== correctAns && v1 > 0 && v1 <= 100) candidates.add(v1);
+      if (v2 !== correctAns && v2 > 0 && v2 <= 100) candidates.add(v2);
+    });
+
+    // 他の段の答え(1〜9 × 1〜9 の中から)
+    const sameDan = [];
+    for (let i = 1; i <= 9; i++) {
+      const v = a * i;
+      if (v !== correctAns && v > 0) sameDan.push(v);
+      const v2 = b * i;
+      if (v2 !== correctAns && v2 > 0) sameDan.push(v2);
+    }
+
+    const candArr = Array.from(candidates);
+    shuffle(candArr);
+    shuffle(sameDan);
+
+    // 60% を近接誤答、40% を同段他項にして混ぜる
+    const result = new Set();
+    const nearCount = Math.ceil(n * 0.6);
+
+    for (const v of candArr) {
+      if (result.size >= nearCount) break;
+      if (v !== correctAns) result.add(v);
+    }
+    for (const v of sameDan) {
+      if (result.size >= n) break;
+      if (v !== correctAns) result.add(v);
+    }
+    // それでも足りない場合は適当な近い数字を埋める
+    let pad = 1;
+    while (result.size < n) {
+      const v = correctAns + pad;
+      if (v > 0 && v !== correctAns) result.add(v);
+      pad = pad > 0 ? -pad : -pad + 1;
+      if (Math.abs(pad) > 50) break;
+    }
+    return Array.from(result).slice(0, n);
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // ===== DOM =====
+  const scoreNum = document.getElementById('scoreNum');
+  const streakEl = document.getElementById('streak');
+  const num1El = document.getElementById('num1');
+  const num2El = document.getElementById('num2');
+  const equationEl = document.getElementById('equation');
+  const choicesEl = document.getElementById('choices');
+  const speakBtn = document.getElementById('speakBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const praise = document.getElementById('praise');
+  const celebrate = document.getElementById('celebrate');
+  const questionCard = document.getElementById('questionCard');
+  const reviewTag = document.getElementById('reviewTag');
+  const danTag = document.getElementById('danTag');
+  const reviewBadge = document.getElementById('reviewBadge');
+  const reviewCountEl = document.getElementById('reviewCount');
+  const settingsModal = document.getElementById('settingsModal');
+  const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+  const resetProgressBtn = document.getElementById('resetProgressBtn');
+  const danGrid = document.getElementById('danGrid');
+
+  // ===== 音声 =====
+  let jaVoice = null;
+  function pickVoice() {
+    const voices = speechSynthesis.getVoices();
+    jaVoice = voices.find(v => /Kyoko/i.test(v.name)) ||
+              voices.find(v => /Otoya/i.test(v.name)) ||
+              voices.find(v => v.lang === 'ja-JP') ||
+              voices.find(v => v.lang && v.lang.startsWith('ja')) ||
+              null;
+  }
+  if ('speechSynthesis' in window) {
+    pickVoice();
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function speakUtterance(text, opts = {}) {
+    if (!('speechSynthesis' in window)) return null;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';
+    u.rate = opts.rate ?? 0.85;
+    u.pitch = opts.pitch ?? 1.3;
+    if (jaVoice) u.voice = jaVoice;
+    return u;
+  }
+
+  // 出題: 伝統的な唱えから「答えを伏せた部分」だけ読み上げる
+  // 例: 2x4 → 「ににんが」(「し」を読まない)
+  //     2x6 → 「にろく」(「じゅうに」を読まない)
+  function speakQuestion(q) {
+    if (!q || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const prompt = buildPrompt(q.a, q.b);
+    if (!prompt) return;
+    const u = speakUtterance(prompt, { rate: 0.85 });
+    if (u) speechSynthesis.speak(u);
+  }
+
+  function speakSimple(text, rate) {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = speakUtterance(text, { rate: rate ?? 0.85 });
+    if (u) speechSynthesis.speak(u);
+  }
+
+  // ===== レンダリング =====
+  function newQuestion() {
+    canTap = true;
+    currentQ = pickNextQuestion();
+    lastQuestionKey = currentQ.key;
+    questionCount += 1;
+
+    // 数字をアニメーション表示
+    num1El.textContent = currentQ.a;
+    num2El.textContent = currentQ.b;
+    // re-trigger animation
+    num1El.style.animation = 'none';
+    num2El.style.animation = 'none';
+    void num1El.offsetWidth;
+    num1El.style.animation = 'numPop 0.4s ease';
+    num2El.style.animation = 'numPop 0.4s ease 0.1s';
+
+    danTag.textContent = `${currentQ.a}のだん`;
+
+    if (currentQ.isReview) {
+      questionCard.classList.add('review-mode');
+      reviewTag.classList.add('show');
+    } else {
+      questionCard.classList.remove('review-mode');
+      reviewTag.classList.remove('show');
+    }
+
+    const distractors = pickDistractors(currentQ.ans, currentQ.a, currentQ.b, 5);
+    const all = shuffle([currentQ.ans, ...distractors]);
+
+    choicesEl.innerHTML = '';
+    all.forEach(v => {
+      const btn = document.createElement('button');
+      btn.className = 'choice';
+      btn.textContent = v;
+      btn.dataset.value = v;
+      btn.addEventListener('click', () => handleChoice(btn, v));
+      choicesEl.appendChild(btn);
+    });
+
+    setTimeout(() => speakQuestion(currentQ), 300);
+    updateReviewBadge();
+  }
+
+  function handleChoice(btn, val) {
+    if (!canTap) return;
+
+    if (val === currentQ.ans) {
+      canTap = false;
+      btn.classList.add('correct');
+      score += 1;
+      streak += 1;
+      scoreNum.textContent = score;
+      updateStreak();
+      recordCorrect(currentQ.key);
+      tickDueCounters();
+
+      // 正解時は音声なし(アニメーションと紙吹雪のみ)
+      speechSynthesis.cancel();
+
+      showPraise();
+
+      if (streak >= 3) {
+        bigCelebrate();
+        streak = 0;
+        updateStreak();
+      }
+
+      setTimeout(newQuestion, 1800);
+    } else {
+      btn.classList.add('wrong');
+      streak = 0;
+      updateStreak();
+      recordWrong(currentQ.key);
+
+      // 不正解時は音声なし(シェイクアニメーションのみ)
+      speechSynthesis.cancel();
+
+      setTimeout(() => btn.classList.remove('wrong'), 500);
+      updateReviewBadge();
+    }
+  }
+
+  function updateStreak() {
+    streakEl.querySelectorAll('.streak-dot').forEach((d, i) => {
+      d.classList.toggle('on', i < streak);
+    });
+  }
+
+  function updateReviewBadge() {
+    const count = Object.keys(mistakes).length;
+    reviewCountEl.textContent = count;
+    reviewBadge.classList.toggle('show', count > 0);
+  }
+
+  const PRAISES = ['すごい！', 'やったー！', 'せいかい！', 'てんさい！', 'はなまる！', 'おみごと！'];
+  function showPraise() {
+    praise.textContent = PRAISES[Math.floor(Math.random() * PRAISES.length)];
+    praise.classList.remove('show');
+    void praise.offsetWidth;
+    praise.classList.add('show');
+  }
+
+  function bigCelebrate() {
+    celebrate.innerHTML = '';
+    const colors = ['#ff7a6b', '#ffd166', '#06d6a0', '#118ab2', '#9c7bd9', '#ffb3c6'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+      c.style.animationDelay = Math.random() * 0.3 + 's';
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      celebrate.appendChild(c);
+    }
+    celebrate.classList.add('show');
+    setTimeout(() => celebrate.classList.remove('show'), 3000);
+  }
+
+  // ===== 設定モーダル =====
+  function buildDanGrid() {
+    danGrid.innerHTML = '';
+    for (let i = 1; i <= 9; i++) {
+      const b = document.createElement('button');
+      b.className = 'dan-btn';
+      b.textContent = `${i}のだん`;
+      b.dataset.dan = i;
+      if (activeDans.includes(i)) b.classList.add('active');
+      b.addEventListener('click', () => {
+        const d = Number(b.dataset.dan);
+        if (activeDans.includes(d)) {
+          // 最低1つは残す
+          if (activeDans.length > 1) {
+            activeDans = activeDans.filter(x => x !== d);
+            b.classList.remove('active');
+          }
+        } else {
+          activeDans.push(d);
+          activeDans.sort((x, y) => x - y);
+          b.classList.add('active');
+        }
+      });
+      danGrid.appendChild(b);
+    }
+  }
+
+  function applyPreset(preset) {
+    switch (preset) {
+      case 'easy': activeDans = [2, 5]; break;
+      case 'lower': activeDans = [2, 3, 4, 5]; break;
+      case 'upper': activeDans = [6, 7, 8, 9]; break;
+      case 'all': activeDans = [1,2,3,4,5,6,7,8,9]; break;
+    }
+    buildDanGrid();
+  }
+
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+  });
+
+  settingsBtn.addEventListener('click', () => {
+    buildDanGrid();
+    settingsModal.classList.add('show');
+  });
+
+  closeSettingsBtn.addEventListener('click', () => {
+    saveSettings();
+    settingsModal.classList.remove('show');
+    // 設定変更したらラウンドをリセット(新しい段で再構成)
+    roundQueue = buildNewRound();
+    saveRound();
+    newQuestion();
+  });
+
+  resetProgressBtn.addEventListener('click', () => {
+    if (!confirm('「にがてリスト」を リセットしますか？\n（てんすうは そのままです）')) return;
+    mistakes = {};
+    saveMistakes();
+    updateReviewBadge();
+  });
+
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+      saveSettings();
+      settingsModal.classList.remove('show');
+    }
+  });
+
+  // ===== 各種ボタン =====
+  speakBtn.addEventListener('click', () => speakQuestion(currentQ));
+
+  restartBtn.addEventListener('click', () => {
+    if (!confirm('さいしょから はじめますか？\n（てんすう だけ リセットされます。にがてな しきは のこります）')) return;
+    score = 0;
+    streak = 0;
+    scoreNum.textContent = 0;
+    updateStreak();
+    newQuestion();
+  });
+
+  document.addEventListener('dblclick', e => e.preventDefault());
+
+  // iOS Safari: 最初のタップで音声を有効化
+  document.addEventListener('touchstart', function init() {
+    speakSimple('');
+    document.removeEventListener('touchstart', init);
+  }, { once: true });
+
+  // ===== 初期化 =====
+  loadSettings();
+  loadMistakes();
+  loadRound();
+  // 保存されたラウンドが現在の段設定と整合しないなら作り直す
+  if (roundQueue.length === 0 ||
+      !roundQueue.every(q => activeDans.includes(q.a))) {
+    roundQueue = buildNewRound();
+    saveRound();
+  }
+  updateReviewBadge();
+  newQuestion();
+
+  // ===== Service Worker =====
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
