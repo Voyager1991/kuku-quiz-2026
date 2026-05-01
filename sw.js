@@ -1,11 +1,13 @@
 // Service Worker for くく クイズ
 // オフライン対応: 初回アクセス後、ネットなしでも動作する
 
-const CACHE_VERSION = 'kuku-v2';
+const CACHE_VERSION = 'kuku-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
   'https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Yusei+Magic&display=swap'
 ];
 
