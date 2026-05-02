@@ -1,7 +1,7 @@
 // Service Worker for くく クイズ
 // オフライン対応: 初回アクセス後、ネットなしでも動作する
 
-const CACHE_VERSION = 'kuku-v3';
+const CACHE_VERSION = 'kuku-v4';
 const CORE_ASSETS = [
   './',
   './index.html',
